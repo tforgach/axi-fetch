@@ -1,17 +1,23 @@
 import type { CheerioAPI } from "cheerio";
-import type { Link, Section } from "../types.js";
+import type { CodeBlock, Link, Section, Table } from "../types.js";
 
 const MAX_LINKS = 5;
 const MAX_SECTIONS = 25;
+const MAX_CODE_BLOCKS = 15;
+const MAX_CODE_CHARS = 1500;
+const MAX_TABLES = 5;
+const MAX_TABLE_ROWS = 30;
+const MAX_TABLE_COLS = 10;
 
 /** Collapse runs of whitespace and trim; readable text for agents. */
 export function normalizeText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-// Noise stripped before reading prose: citation markers, edit links, tables
-// (infoboxes/data grids concatenate into unreadable blobs), and raw styles.
-const PROSE_NOISE = "sup.reference, .mw-editsection, .reference, table, style";
+// Noise stripped before reading prose: citation markers, edit links, tables and
+// code blocks (extracted separately as structured data), and raw styles.
+const PROSE_NOISE =
+  "sup.reference, .mw-editsection, .reference, table, pre, style";
 
 // Block-level elements that carry article prose, read in document order.
 const PROSE_BLOCKS = "p, li, blockquote, h2, h3, h4, h5, h6, dd";
@@ -104,4 +110,72 @@ export function extractLinks(
   });
 
   return links;
+}
+
+// Language hint from a class token like `language-python`, `lang-js`,
+// `highlight-source-ts`, or `brush: python`.
+const LANG_CLASS = /(?:language|lang|highlight-source|brush)[-:\s]+([a-z0-9+#]+)/i;
+
+/** Trim leading/trailing blank lines while preserving indentation. */
+function trimCode(code: string): string {
+  return code.replace(/^\s*\n/, "").replace(/\s+$/, "");
+}
+
+/**
+ * Pull `<pre>` code blocks out as structured data. Whitespace is preserved (no
+ * normalizeText) so indentation survives; language is inferred from class hints.
+ */
+export function extractCodeBlocks($: CheerioAPI): CodeBlock[] {
+  const blocks: CodeBlock[] = [];
+  $("pre").each((_, el) => {
+    if (blocks.length >= MAX_CODE_BLOCKS) return;
+    const $el = $(el);
+    const code = trimCode($el.text());
+    if (!code.trim()) return;
+
+    const classes = `${$el.attr("class") ?? ""} ${$el.find("code").first().attr("class") ?? ""}`;
+    const language = LANG_CLASS.exec(classes)?.[1]?.toLowerCase();
+    const clipped =
+      code.length > MAX_CODE_CHARS ? `${code.slice(0, MAX_CODE_CHARS)}…` : code;
+
+    blocks.push(language ? { language, code: clipped } : { code: clipped });
+  });
+  return blocks;
+}
+
+// Layout/navigation tables that aren't real tabular content.
+const TABLE_NOISE = ".infobox, .navbox, .metadata, .sidebar, .vertical-navbox, .ambox, [role='presentation']";
+
+/** Pull real data tables out as `{ headers, rows }` (a strong TOON fit). */
+export function extractTables($: CheerioAPI): Table[] {
+  const tables: Table[] = [];
+  $("table").each((_, el) => {
+    if (tables.length >= MAX_TABLES) return;
+    const $t = $(el);
+    if ($t.is(TABLE_NOISE) || $t.parents(TABLE_NOISE).length > 0) return;
+
+    const cellText = (i: number, cell: unknown) =>
+      normalizeText($(cell as never).text());
+    let headers = $t.find("thead th").map(cellText).get();
+    if (headers.length === 0) {
+      headers = $t.find("tr").first().find("th").map(cellText).get();
+    }
+
+    const rowScope = $t.find("tbody tr").length ? $t.find("tbody tr") : $t.find("tr");
+    const rows: string[][] = [];
+    rowScope.each((_, tr) => {
+      if (rows.length >= MAX_TABLE_ROWS) return;
+      const cells = $(tr).find("td");
+      if (cells.length === 0) return; // header-only row
+      const row = cells.slice(0, MAX_TABLE_COLS).map(cellText).get();
+      if (row.some((c) => c.length > 0)) rows.push(row);
+    });
+
+    // Keep only tables that are actually tabular (>=2 rows, >=2 columns).
+    const width = Math.max(headers.length, rows[0]?.length ?? 0);
+    if (rows.length >= 2 && width >= 2) {
+      tables.push({ headers: headers.slice(0, MAX_TABLE_COLS), rows });
+    }
+  });
+  return tables;
 }

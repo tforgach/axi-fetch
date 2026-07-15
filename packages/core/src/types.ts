@@ -44,13 +44,30 @@ export interface Section {
   level: number;
 }
 
+/** A fenced/`<pre>` code block pulled out of the prose. */
+export interface CodeBlock {
+  /** Detected language (from class hints), if any. */
+  language?: string;
+  code: string;
+}
+
+/** A tabular block pulled out of the prose (strong TOON fit). */
+export interface Table {
+  headers: string[];
+  rows: string[][];
+}
+
 export interface Content {
-  /** Primary extracted text, possibly truncated (see `truncated`). */
+  /** Primary extracted prose, possibly truncated (see `truncated`). */
   main: string;
   /** True when `main` was truncated to `maxContentLength`. */
   truncated: boolean;
   /** Heading outline of the page, if any. */
   sections: Section[];
+  /** Code blocks lifted out of the prose. */
+  codeBlocks: CodeBlock[];
+  /** Data tables lifted out of the prose. */
+  tables: Table[];
   /** Relevant outbound links, if `includeLinks` was set. */
   links: Link[];
 }

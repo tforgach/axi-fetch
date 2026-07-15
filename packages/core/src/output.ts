@@ -26,6 +26,12 @@ export function toStructured(response: AxiResponse): AxiStructuredOutput {
   if (content.sections.length > 0) {
     output.sections = content.sections;
   }
+  if (content.codeBlocks.length > 0) {
+    output.codeBlocks = content.codeBlocks;
+  }
+  if (content.tables.length > 0) {
+    output.tables = content.tables;
+  }
   if (content.links.length > 0) {
     output.links = content.links;
   }

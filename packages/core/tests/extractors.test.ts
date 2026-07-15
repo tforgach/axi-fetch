@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import * as cheerio from "cheerio";
-import { extractLinks, extractProse } from "../src/extractors/shared.js";
+import {
+  extractCodeBlocks,
+  extractLinks,
+  extractProse,
+  extractTables,
+} from "../src/extractors/shared.js";
 
 describe("extractProse", () => {
   it("separates block boundaries instead of gluing words", () => {
@@ -23,6 +28,51 @@ describe("extractProse", () => {
     expect(prose).not.toContain("[1]");
     expect(prose).not.toContain("[b]");
     expect(prose).toBe("Napoleon was Emperor.");
+  });
+});
+
+describe("extractCodeBlocks", () => {
+  it("preserves indentation and detects language from class", () => {
+    const $ = cheerio.load(
+      `<div><pre class="language-python"><code>def f():\n    return 1</code></pre></div>`,
+    );
+    const blocks = extractCodeBlocks($);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.language).toBe("python");
+    expect(blocks[0]!.code).toBe("def f():\n    return 1");
+  });
+
+  it("omits language when there is no class hint", () => {
+    const $ = cheerio.load("<pre>plain code</pre>");
+    expect(extractCodeBlocks($)[0]).toEqual({ code: "plain code" });
+  });
+});
+
+describe("extractTables", () => {
+  it("extracts headers and rows from a real data table", () => {
+    const $ = cheerio.load(
+      `<table>
+        <thead><tr><th>Plan</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>$0</td></tr>
+          <tr><td>Pro</td><td>$20</td></tr>
+        </tbody>
+      </table>`,
+    );
+    const tables = extractTables($);
+    expect(tables).toHaveLength(1);
+    expect(tables[0]!.headers).toEqual(["Plan", "Price"]);
+    expect(tables[0]!.rows).toEqual([
+      ["Free", "$0"],
+      ["Pro", "$20"],
+    ]);
+  });
+
+  it("skips infobox/layout tables", () => {
+    const $ = cheerio.load(
+      `<table class="infobox"><tr><td>Born</td><td>1769</td></tr><tr><td>Died</td><td>1821</td></tr></table>`,
+    );
+    expect(extractTables($)).toHaveLength(0);
   });
 });
 

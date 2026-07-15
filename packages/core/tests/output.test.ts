@@ -15,6 +15,8 @@ const sample: AxiResponse = {
     main: "Body text.",
     truncated: true,
     sections: [{ heading: "Intro", level: 2 }],
+    codeBlocks: [{ language: "ts", code: "const x = 1;" }],
+    tables: [{ headers: ["a", "b"], rows: [["1", "2"]] }],
     links: [{ text: "More", url: "https://site.com/more", kind: "internal" }],
   },
   nextSteps: ["Re-run with `--full` to get the complete content"],
@@ -30,11 +32,19 @@ describe("toStructured", () => {
   it("omits empty collections to save tokens", () => {
     const bare = {
       ...sample,
-      content: { ...sample.content, sections: [], links: [] },
+      content: {
+        ...sample.content,
+        sections: [],
+        codeBlocks: [],
+        tables: [],
+        links: [],
+      },
       nextSteps: [],
     };
     const out = toStructured(bare);
     expect(out).not.toHaveProperty("sections");
+    expect(out).not.toHaveProperty("codeBlocks");
+    expect(out).not.toHaveProperty("tables");
     expect(out).not.toHaveProperty("links");
     expect(out).not.toHaveProperty("help");
   });

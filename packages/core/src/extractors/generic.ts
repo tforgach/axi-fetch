@@ -1,6 +1,12 @@
 import * as cheerio from "cheerio";
 import type { Content } from "../types.js";
-import { extractLinks, extractSections, normalizeText } from "./shared.js";
+import {
+  extractCodeBlocks,
+  extractLinks,
+  extractProse,
+  extractSections,
+  extractTables,
+} from "./shared.js";
 
 const NOISE_SELECTORS = [
   "script",
@@ -16,12 +22,11 @@ const NOISE_SELECTORS = [
   "[aria-hidden='true']",
 ].join(", ");
 
-const CONTENT_CONTAINERS = ["main", "article", "#content", ".content", "#main"];
-
 /**
- * Aggressive readability-style fallback: strip chrome/noise, then pull text from
- * the densest content container (falling back to <body>). Outline and links are
- * taken from the whole (de-noised) document.
+ * Aggressive readability-style fallback. Strips page chrome (nav/header/footer),
+ * then runs the same structured extraction as the article path: code blocks and
+ * tables come out as structured data, and prose is read block-by-block (no more
+ * word-gluing from raw `.text()`).
  */
 export function extractGeneric(
   html: string,
@@ -31,23 +36,18 @@ export function extractGeneric(
   const $ = cheerio.load(html);
   $(NOISE_SELECTORS).remove();
 
-  // Prefer a semantic container with substantial text; else use the body.
-  let main = "";
-  for (const selector of CONTENT_CONTAINERS) {
-    const text = normalizeText($(selector).first().text());
-    if (text.length > 200) {
-      main = text;
-      break;
-    }
-  }
-  if (!main) {
-    main = normalizeText($("body").text());
-  }
+  // Pull structured blocks before extractProse strips them from the prose.
+  const sections = extractSections($);
+  const codeBlocks = extractCodeBlocks($);
+  const tables = extractTables($);
+  const main = extractProse($);
 
   return {
     main,
     truncated: false,
-    sections: extractSections($),
+    sections,
+    codeBlocks,
+    tables,
     links: includeLinks ? extractLinks($, url) : [],
   };
 }
