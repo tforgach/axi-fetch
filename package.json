@@ -12,7 +12,8 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "dev": "pnpm --filter @travis/axi-fetch dev"
+    "dev": "pnpm --filter @travis/axi-fetch dev",
+    "bench": "pnpm --filter @travis/axi-fetch-bench build && pnpm --filter @travis/axi-fetch-bench bench"
   },
   "license": "MIT"
 }

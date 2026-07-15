@@ -1,0 +1,7 @@
+url,ok,type,rawHtmlTokens,markdownTokens,toonTokens,toonFullTokens,savingsVsRaw,savingsVsMarkdown,formatSavingsVsMarkdown,error
+https://en.wikipedia.org/wiki/Napoleon,true,article,608034,100444,765,33297,99.9,99.2,66.9,
+https://en.wikipedia.org/wiki/Token_bucket,true,article,30955,3331,517,1865,98.3,84.5,44,
+https://en.wikipedia.org/wiki/Rate_limiting,true,article,25722,2383,525,1217,98,78,48.9,
+https://docs.python.org/3/tutorial/introduction.html,true,generic,21776,5192,658,4785,97,87.3,7.8,
+https://docs.python.org/3/library/asyncio-task.html,true,generic,49916,14019,726,9478,98.5,94.8,32.4,
+https://example.com,true,generic,162,29,138,138,14.8,-375.9,-375.9,

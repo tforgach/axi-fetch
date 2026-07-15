@@ -71,7 +71,27 @@ URL → fetch (native) → detect type (rules) → extract (Readability / cheeri
 | MVP page types | `article` + `generic` fallback |
 | Errors | structured TOON + exit codes, never interactive |
 
+## Benchmark
+
+`packages/bench` measures token savings vs a raw-HTML baseline and a strong
+readable-markdown (Readability→markdown) baseline. Run it with `pnpm bench`;
+results land in `packages/bench/results/`.
+
+Median across the initial 6-page set (tiktoken proxy):
+
+| Comparison | Median savings |
+|---|--:|
+| TOON vs raw HTML | **98.2%** |
+| TOON (default) vs readable markdown | **85.9%** |
+| TOON (--full) vs readable markdown | **38.2%** |
+
+Most of the win comes from extraction + truncation; TOON's format advantage
+shows up on structured data more than prose. See [ROADMAP.md](./ROADMAP.md) for
+what that implies. On trivially small pages the fixed metadata overhead can make
+output net-larger — a documented tradeoff.
+
 ## Status
 
-MVP core is working end-to-end (fetch → detect → extract → TOON). Not yet
-published to npm. See `../plans/` for the full roadmap.
+MVP core is working end-to-end (fetch → detect → extract → TOON), with a
+benchmark harness. Not yet published to npm. See [ROADMAP.md](./ROADMAP.md) for
+prioritized next steps.

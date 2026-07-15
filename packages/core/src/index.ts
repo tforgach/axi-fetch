@@ -22,25 +22,36 @@ export async function axiFetch(
   url: string,
   options: AxiFetchOptions = {},
 ): Promise<FetchResult> {
-  const includeLinks = options.includeLinks ?? true;
-  const maxContentLength = options.maxContentLength ?? DEFAULT_MAX_CONTENT_LENGTH;
-
   const page = await fetchUrl(url, {
     timeout: options.timeout,
     userAgent: options.userAgent,
   });
+  return extractFromHtml(page.html, page.finalUrl, options);
+}
 
-  const detection = detectType(page.html, page.finalUrl);
+/**
+ * Build an AXI response from already-fetched HTML (no network). Useful for
+ * offline processing, fixtures, and benchmarking the same HTML across formats.
+ */
+export function extractFromHtml(
+  html: string,
+  url: string,
+  options: AxiFetchOptions = {},
+): FetchResult {
+  const includeLinks = options.includeLinks ?? true;
+  const maxContentLength = options.maxContentLength ?? DEFAULT_MAX_CONTENT_LENGTH;
+
+  const detection = detectType(html, url);
 
   let title: string;
   let content: Content;
   if (detection.type === "article") {
-    const article = extractArticle(page.html, page.finalUrl, includeLinks);
+    const article = extractArticle(html, url, includeLinks);
     title = article.title;
     content = article.content;
   } else {
-    content = extractGeneric(page.html, page.finalUrl, includeLinks);
-    title = deriveTitle(page.html) || page.finalUrl;
+    content = extractGeneric(html, url, includeLinks);
+    title = deriveTitle(html) || url;
   }
 
   const fullLength = content.main.length;
@@ -54,7 +65,7 @@ export async function axiFetch(
 
   const axiResponse: AxiResponse = {
     metadata: {
-      url: page.finalUrl,
+      url,
       title,
       type: detection.type,
       confidence: detection.confidence,
