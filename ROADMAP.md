@@ -97,10 +97,15 @@ Three findings drive the priorities below:
 
 ## Publishing & polish
 
-- Create the npm org/account; publish `@travis/axi-fetch` + the skill package.
+- **Publish via GitHub Packages** — no separate npm account needed initially.
+  Scope the package to the GitHub owner (`@tforgach/axi-fetch`), set
+  `publishConfig.registry = https://npm.pkg.github.com`, and publish straight
+  from CI with the built-in `GITHUB_TOKEN` (a release workflow on tag/release).
+  Consumers add an `.npmrc` line pointing `@tforgach:registry` at GitHub Packages.
+  Can still cross-publish to the public npm registry later.
 - README badges, versioning (consider `release-please`), CHANGELOG.
 - Package and document the Claude Code skill end-to-end.
-- Write-up: "How I cut agent token usage by ~85% vs a reader tool" using the
+- Write-up: "How I cut agent token usage by ~80% vs a reader tool" using the
   benchmark data (lead with median, show the small-page caveat honestly).
 
 ---
