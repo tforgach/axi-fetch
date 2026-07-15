@@ -1,0 +1,49 @@
+{
+  "name": "@travis/axi-fetch",
+  "version": "0.1.0",
+  "description": "Fetch a URL and get a token-efficient, agent-ready TOON response (AXI-conformant CLI + library)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "axi-fetch": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "node --experimental-strip-types --no-warnings src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "@toon-format/toon": "^2.1.0",
+    "axi-sdk-js": "^0.1.8",
+    "cheerio": "^1.0.0",
+    "jsdom": "^25.0.1"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "license": "MIT"
+}
