@@ -4,24 +4,42 @@ import type { AxiResponse } from "./types.js";
 /** A plain object destined for TOON encoding (mirrors the SDK's shape). */
 export type AxiStructuredOutput = Record<string, unknown>;
 
+// Below this content size the fixed envelope (confidence, contentLength, …)
+// costs more than it's worth, so we emit only the essentials.
+const SMALL_PAGE_CHARS = 200;
+
 /**
  * Map an AxiResponse to the flat-ish structure we hand to the TOON encoder.
  * Field order is deliberate: identity first, then content, then aggregates and
- * next steps. Empty collections are omitted to save tokens.
+ * next steps. Low-value and empty fields are omitted to save tokens — `fetchedAt`
+ * is dropped entirely (rarely actionable), `truncated` only shows when true, and
+ * trivially small pages get a bare envelope.
  */
 export function toStructured(response: AxiResponse): AxiStructuredOutput {
   const { metadata, content, nextSteps } = response;
+
+  const hasStructure =
+    content.sections.length > 0 ||
+    content.codeBlocks.length > 0 ||
+    content.tables.length > 0 ||
+    content.links.length > 0;
+  const isSmall = metadata.contentLength < SMALL_PAGE_CHARS && !hasStructure;
 
   const output: AxiStructuredOutput = {
     url: metadata.url,
     title: metadata.title,
     type: metadata.type,
-    confidence: Number(metadata.confidence.toFixed(2)),
-    fetchedAt: metadata.fetchedAt,
-    contentLength: metadata.contentLength,
-    truncated: content.truncated,
-    content: content.main,
   };
+
+  // Quality/aggregate fields aren't worth the tokens on trivially small pages.
+  if (!isSmall) {
+    output.confidence = Number(metadata.confidence.toFixed(2));
+    output.contentLength = metadata.contentLength;
+  }
+  if (content.truncated) {
+    output.truncated = true;
+  }
+  output.content = content.main;
 
   if (content.sections.length > 0) {
     output.sections = content.sections;
