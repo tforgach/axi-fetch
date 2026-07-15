@@ -6,13 +6,17 @@ truncate → TOON) is working; this is what comes next and why.
 
 ## What the benchmark told us
 
-Median savings across 6 pages (tiktoken proxy):
+Median savings across 6 pages (o200k / GPT-4o tokenizer):
 
 | Comparison | Median | What it isolates |
 |---|--:|---|
-| TOON vs raw HTML | **98.2%** | naive baseline — nobody feeds raw HTML, so this is a ceiling, not a claim |
-| TOON (default) vs readable markdown | **85.9%** | end-to-end product win: extraction + truncation + format |
-| TOON (--full) vs readable markdown | **38.2%** | extraction + format, truncation removed |
+| TOON vs raw HTML | **97%** | naive baseline — nobody feeds raw HTML, so this is a ceiling, not a claim |
+| TOON (default) vs readable markdown | **81.2%** | end-to-end product win: extraction + truncation + format |
+| TOON (--full) vs readable markdown | **45.1%** | extraction + format, truncation removed |
+
+> Update: structured content (code blocks + tables) has since shipped, raising
+> the format-only median from 38.2% → 45.1% (biggest gains on code-heavy docs
+> pages). The remaining findings below still stand.
 
 Three findings drive the priorities below:
 
@@ -45,19 +49,17 @@ Three findings drive the priorities below:
 
 ## P1 — Extraction quality & structure (the real lever)
 
-- **Emit structured content, not one blob.** Return `sections[]` *with text*,
-  `codeBlocks[]{language,code}`, and `tables[]{headers,rows[]}`. This is where
-  TOON's token advantage actually materializes, and it's more useful to agents.
-  *(finding 1 — highest-leverage item on this list)*
-- **Code-block extraction** (`<pre>`/`<code>`, fenced): critical for docs pages
-  like the asyncio reference; currently flattened into prose.
-- **`documentation` page type + extractor**: heading hierarchy + code + tables,
-  detected via URL (`/docs/`, `docs.*`), nav structure, and content signals.
-  *(finding 3)*
-- **Apply prose cleanup to the generic path.** The article path strips
-  infoboxes/citations/tables via `extractProse`; generic still uses raw
-  `.text()` and can glue words / keep boilerplate. Unify carefully (generic
-  tables are sometimes the content).
+- ✅ **Emit structured content, not one blob.** `codeBlocks[]{language,code}` and
+  `tables[]{headers,rows[]}` now lifted out of the prose. *(finding 1 — shipped)*
+- ✅ **Code-block extraction** (`<pre>`, fenced), indentation preserved,
+  language inferred from class hints. *(shipped)*
+- ✅ **Apply prose cleanup to the generic path** — generic now shares the
+  article path's structured extraction (no more raw `.text()` gluing). *(shipped)*
+- **Sectioned prose**: attach text to each `Section` (`{heading,level,text}`) so
+  the outline carries content, not just labels. Enables per-section truncation.
+- **`documentation` page type + extractor**: detected via URL (`/docs/`,
+  `docs.*`), nav structure, and content signals; today docs fall back to
+  `generic`. *(finding 3)*
 - **Better link selection**: rank by prominence/position instead of first-N;
   dedupe near-identical anchors.
 

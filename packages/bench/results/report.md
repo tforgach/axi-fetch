@@ -8,12 +8,12 @@ Token counts via tiktoken (a standard proxy; Claude's tokenizer differs but form
 
 | URL | type | raw HTML | readable md | TOON | TOON --full | vs raw | vs md | format-only vs md |
 |---|---|--:|--:|--:|--:|--:|--:|--:|
-| en.wikipedia.org/wiki/Napoleon | article | 608034 | 100444 | 765 | 33297 | 99.9% | 99.2% | 66.9% |
-| en.wikipedia.org/wiki/Token_bucket | article | 30955 | 3331 | 517 | 1865 | 98.3% | 84.5% | 44% |
-| en.wikipedia.org/wiki/Rate_limiting | article | 25722 | 2383 | 525 | 1217 | 98% | 78% | 48.9% |
-| docs.python.org/3/tutorial/introduction.html | generic | 21776 | 5192 | 658 | 4785 | 97% | 87.3% | 7.8% |
-| docs.python.org/3/library/asyncio-task.html | generic | 49916 | 14019 | 726 | 9478 | 98.5% | 94.8% | 32.4% |
-| example.com | generic | 162 | 29 | 138 | 138 | 14.8% | -375.9% | -375.9% |
+| en.wikipedia.org/wiki/Napoleon | article | 609652 | 99969 | 758 | 33009 | 99.9% | 99.2% | 67% |
+| en.wikipedia.org/wiki/Token_bucket | article | 30932 | 3327 | 517 | 1863 | 98.3% | 84.5% | 44% |
+| en.wikipedia.org/wiki/Rate_limiting | article | 25798 | 2364 | 524 | 1208 | 98% | 77.8% | 48.9% |
+| docs.python.org/3/tutorial/introduction.html | generic | 21924 | 5201 | 1489 | 3497 | 93.2% | 71.4% | 32.8% |
+| docs.python.org/3/library/asyncio-task.html | generic | 50024 | 14264 | 2067 | 7674 | 95.9% | 85.5% | 46.2% |
+| example.com | generic | 162 | 29 | 137 | 137 | 15.4% | -372.4% | -372.4% |
 
 ## Aggregate
 
@@ -21,7 +21,7 @@ Median leads (robust to outliers like trivially small pages where fixed metadata
 
 | Metric | Median | Mean | Range |
 |---|--:|--:|--:|
-| TOON vs raw HTML | **98.2%** | 84.4% | 14.8% → 99.9% |
-| TOON (default) vs readable markdown | **85.9%** | 11.3% | -375.9% → 99.2% |
-| TOON (--full) vs readable markdown | **38.2%** | -29.3% | -375.9% → 66.9% |
+| TOON vs raw HTML | **97%** | 83.4% | 15.4% → 99.9% |
+| TOON (default) vs readable markdown | **81.2%** | 7.7% | -372.4% → 99.2% |
+| TOON (--full) vs readable markdown | **45.1%** | -22.2% | -372.4% → 67% |
 

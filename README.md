@@ -77,18 +77,19 @@ URL → fetch (native) → detect type (rules) → extract (Readability / cheeri
 readable-markdown (Readability→markdown) baseline. Run it with `pnpm bench`;
 results land in `packages/bench/results/`.
 
-Median across the initial 6-page set (tiktoken proxy):
+Median across the initial 6-page set (o200k / GPT-4o tokenizer):
 
 | Comparison | Median savings |
 |---|--:|
-| TOON vs raw HTML | **98.2%** |
-| TOON (default) vs readable markdown | **85.9%** |
-| TOON (--full) vs readable markdown | **38.2%** |
+| TOON vs raw HTML | **97%** |
+| TOON (default) vs readable markdown | **81.2%** |
+| TOON (--full) vs readable markdown | **45.1%** |
 
 Most of the win comes from extraction + truncation; TOON's format advantage
-shows up on structured data more than prose. See [ROADMAP.md](./ROADMAP.md) for
-what that implies. On trivially small pages the fixed metadata overhead can make
-output net-larger — a documented tradeoff.
+shows up on structured data (code blocks, tables) more than prose — which is why
+lifting those out into structured fields raised the format-only win. See
+[ROADMAP.md](./ROADMAP.md). On trivially small pages the fixed metadata overhead
+can make output net-larger — a documented tradeoff (addressed on the roadmap).
 
 ## Status
 
