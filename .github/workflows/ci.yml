@@ -21,11 +21,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
-        run: pnpm -r typecheck
-
+      # Build first so workspace packages can resolve each other's declarations.
       - name: Build
         run: pnpm build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
 
       - name: Test
         run: pnpm test
