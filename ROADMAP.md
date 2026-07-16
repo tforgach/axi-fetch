@@ -57,38 +57,36 @@ Three findings drive the priorities below:
   article path's structured extraction (no more raw `.text()` gluing). *(shipped)*
 - **Sectioned prose**: attach text to each `Section` (`{heading,level,text}`) so
   the outline carries content, not just labels. Enables per-section truncation.
-- **`documentation` page type + extractor**: detected via URL (`/docs/`,
-  `docs.*`), nav structure, and content signals; today docs fall back to
-  `generic`. *(finding 3)*
+- ✅ **`documentation` page type + extractor** — detected via docs.*/developer.*
+  hosts, `/docs//reference//api/` paths, and code-heavy content. *(finding 3 — shipped)*
 - **Better link selection**: rank by prominence/position instead of first-N;
   dedupe near-identical anchors.
 
 ## P1 — Correctness & robustness
 
-- **Follow HTML `<meta http-equiv="refresh">` redirects** (native `fetch` only
-  follows HTTP 3xx — the Rust blog stub exposed this).
-- **Charset/encoding handling** for non-UTF-8 pages (respect `content-type`
-  charset / `<meta charset>`).
-- **Retry/backoff** on transient network errors; clearer `HTTP_ERROR` bodies.
-- **Bot-block awareness**: detect 403/challenge pages and surface an actionable
-  structured error (some sites, e.g. LeetCode, block automated fetches).
+- ✅ **Follow HTML `<meta http-equiv="refresh">` redirects** (up to 3 hops). *(shipped)*
+- ✅ **Charset/encoding handling** — decode by `content-type` / `<meta charset>`
+  instead of assuming UTF-8. *(shipped)*
+- ✅ **Retry/backoff** on transient network errors and 429/5xx. *(shipped)*
+- ✅ **Bot-block awareness** — 401/403 surface a distinct `FORBIDDEN` error with
+  an actionable message. *(shipped)*
 
 ## P2 — Bigger features
 
-- **Caching layer** (LRU + conditional requests via ETag/Last-Modified) to avoid
-  refetching within a session.
+- ✅ **Caching layer** — on-disk cache (`~/.cache/axi-fetch`) keyed by URL with a
+  15-min TTL and `--no-cache`. *(shipped)* Follow-up: conditional requests
+  (ETag/Last-Modified) to revalidate instead of hard-expiring.
 - **JS rendering** (Playwright) behind an opt-in `--render` flag for SPA/dynamic
-  pages — Phase-2 in the plan.
+  pages — Phase-2 in the plan. *(deferred — heavy dep + browser install)*
 - **More page types**: `pricing`, `product` (tables/lists — strong TOON fit).
 - **Sitemap / multi-page** fetch for docs sets.
 
 ## Testing, CI & benchmarking
 
+- ✅ **CI workflow** — build + typecheck + `vitest run` on push/PR under Node 20. *(shipped)*
 - **Fixture-based extractor tests** using saved HTML snapshots (deterministic,
   offline) alongside the current unit tests.
 - **Opt-in live integration suite** (network-gated, not in default `test`).
-- **CI workflow**: build + `vitest run` on push/PR (adapt the reference repo's
-  `axi-sdk-js-ci.yml`).
 - **Expand the benchmark set** (news, product, pricing, blog) and add a
   **regression gate** that fails if median savings drop.
 - **Real agent-task benchmark** (à la the reference `bench-github`/`bench-browser`):
