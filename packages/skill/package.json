@@ -1,10 +1,10 @@
 {
-  "name": "@travis/axi-fetch-skill",
+  "name": "@tforgach/axi-fetch-skill",
   "version": "0.1.0",
   "private": true,
   "description": "Claude Code skill that invokes axi-fetch for token-efficient web fetching",
   "type": "module",
   "dependencies": {
-    "@travis/axi-fetch": "workspace:*"
+    "@tforgach/axi-fetch": "workspace:*"
   }
 }

@@ -1,4 +1,4 @@
-import { extractFromHtml, fetchUrl } from "@travis/axi-fetch";
+import { extractFromHtml, fetchUrl } from "@tforgach/axi-fetch";
 import { readableMarkdown } from "./baselines.js";
 import { countTokens } from "./tokens.js";
 

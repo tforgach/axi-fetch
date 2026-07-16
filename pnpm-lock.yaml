@@ -13,7 +13,7 @@ importers:
       '@mozilla/readability':
         specifier: ^0.5.0
         version: 0.5.0
-      '@travis/axi-fetch':
+      '@tforgach/axi-fetch':
         specifier: workspace:*
         version: link:../core
       gpt-tokenizer:
@@ -72,7 +72,7 @@ importers:
 
   packages/skill:
     dependencies:
-      '@travis/axi-fetch':
+      '@tforgach/axi-fetch':
         specifier: workspace:*
         version: link:../core
 

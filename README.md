@@ -14,7 +14,7 @@ errors, exit codes, self-update).
 ```
 axi-fetch/
 ├── packages/
-│   ├── core/     @travis/axi-fetch — the CLI + extraction library
+│   ├── core/     @tforgach/axi-fetch — the CLI + extraction library
 │   └── skill/    Claude Code skill (SKILL.md) that shells out to the CLI
 ```
 
@@ -24,7 +24,7 @@ axi-fetch/
 # Requires Node 20+
 corepack enable pnpm
 pnpm install
-pnpm --filter @travis/axi-fetch build
+pnpm --filter @tforgach/axi-fetch build
 
 # Run the CLI
 node packages/core/dist/cli.js https://en.wikipedia.org/wiki/Napoleon 
@@ -44,7 +44,7 @@ axi-fetch <url> [flags]
 ## Library
 
 ```ts
-import { axiFetch } from "@travis/axi-fetch";
+import { axiFetch } from "@tforgach/axi-fetch";
 
 const { axiResponse, toonOutput } = await axiFetch("https://example.com/article");
 console.log(toonOutput);      // TOON string (agent-facing)

@@ -66,5 +66,5 @@ code: HTTP_ERROR
 ## Install
 
 ```sh
-npm install -g @travis/axi-fetch
+npm install -g @tforgach/axi-fetch
 ```
