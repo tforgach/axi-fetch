@@ -4,3 +4,7 @@ dist/
 .DS_Store
 coverage/
 *.tsbuildinfo
+
+# Local working docs, not tracked
+ROADMAP.md
+HANDOFF.md
