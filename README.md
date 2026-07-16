@@ -18,16 +18,17 @@ axi-fetch/
 │   └── skill/    Claude Code skill (SKILL.md) that shells out to the CLI
 ```
 
-## Quick start
+## Install
+
+Published on npm (requires Node 20+):
 
 ```sh
-# Requires Node 20+
-corepack enable pnpm
-pnpm install
-pnpm --filter @tforgach/axi-fetch build
+# CLI
+npm install -g @tforgach/axi-fetch
+axi-fetch https://en.wikipedia.org/wiki/Napoleon
 
-# Run the CLI
-node packages/core/dist/cli.js https://en.wikipedia.org/wiki/Napoleon 
+# or as a library
+npm install @tforgach/axi-fetch
 ```
 
 ## CLI
@@ -90,6 +91,18 @@ Median across the initial 6-page set (o200k / GPT-4o tokenizer):
 Most of the win comes from extraction + truncation; TOON's format advantage
 shows up on structured data more than prose. On trivially small pages the fixed
 metadata overhead can make output net-larger — a documented tradeoff.
+
+## Development
+
+The repo is a pnpm monorepo — this is for contributing, not installing:
+
+```sh
+corepack enable pnpm
+pnpm install
+pnpm build        # build all packages
+pnpm test         # run the test suite
+pnpm bench        # run the token-savings benchmark
+```
 
 ## Status
 
