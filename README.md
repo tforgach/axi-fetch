@@ -37,6 +37,7 @@ axi-fetch <url> [flags]
 
 --full            Return full content (skip truncation)
 --no-links        Omit outbound links
+--no-cache        Bypass the on-disk response cache (15-min TTL)
 --timeout <ms>    Network timeout (default 10000)
 --max <chars>     Truncate content to N chars (default 1500)
 ```
@@ -48,14 +49,15 @@ import { axiFetch } from "@tforgach/axi-fetch";
 
 const { axiResponse, toonOutput } = await axiFetch("https://example.com/article");
 console.log(toonOutput);      // TOON string (agent-facing)
-console.log(axiResponse.type); // "article" | "generic"
+console.log(axiResponse.type); // "article" | "documentation" | "generic"
 ```
 
 ## Pipeline
 
 ```
-URL → fetch (native) → detect type (rules) → extract (Readability / cheerio)
-    → truncate + next-steps → TOON encode
+URL → fetch (native; HTTP + meta-refresh redirects, charset, disk cache)
+    → detect type (rules) → extract (Readability / cheerio)
+    → lift sections/code/tables/links → truncate + next-steps → TOON encode
 ```
 
 ## Design decisions
@@ -68,7 +70,7 @@ URL → fetch (native) → detect type (rules) → extract (Readability / cheeri
 | Article extraction | `@mozilla/readability` on `jsdom` |
 | TOON | official `@toon-format/toon` (via `axi-sdk-js`) |
 | Type detection | rules-based (URL, meta, schema.org — no LLM) |
-| MVP page types | `article` + `generic` fallback |
+| Page types | `article`, `documentation`, `generic` fallback |
 | Errors | structured TOON + exit codes, never interactive |
 
 ## Benchmark
@@ -77,13 +79,13 @@ URL → fetch (native) → detect type (rules) → extract (Readability / cheeri
 readable-markdown (Readability→markdown) baseline. Run it with `pnpm bench`;
 results land in `packages/bench/results/`.
 
-Median across the initial 6-page set (tiktoken proxy):
+Median across the initial 6-page set (o200k / GPT-4o tokenizer):
 
 | Comparison | Median savings |
 |---|--:|
-| TOON vs raw HTML | **98.2%** |
-| TOON (default) vs readable markdown | **85.9%** |
-| TOON (--full) vs readable markdown | **38.2%** |
+| TOON vs raw HTML | **97%** |
+| TOON (default) vs readable markdown | **81.2%** |
+| TOON (--full) vs readable markdown | **45.1%** |
 
 Most of the win comes from extraction + truncation; TOON's format advantage
 shows up on structured data more than prose. On trivially small pages the fixed
@@ -91,5 +93,6 @@ metadata overhead can make output net-larger — a documented tradeoff.
 
 ## Status
 
-MVP core is working end-to-end (fetch → detect → extract → TOON), with a
-benchmark harness. Not yet published to npm.
+Published: [`@tforgach/axi-fetch`](https://www.npmjs.com/package/@tforgach/axi-fetch)
+(v0.1.0, MIT). Core is working end-to-end (fetch → detect → extract → TOON) with a
+benchmark harness and CI.
