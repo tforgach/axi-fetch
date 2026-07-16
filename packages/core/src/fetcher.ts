@@ -1,4 +1,5 @@
 import { AxiError } from "axi-sdk-js";
+import { readCache, writeCache } from "./cache.js";
 
 const DEFAULT_TIMEOUT = 10_000;
 const DEFAULT_USER_AGENT =
@@ -22,6 +23,10 @@ export interface FetchedPage {
 export interface FetchUrlOptions {
   timeout?: number;
   userAgent?: string;
+  /** Use the on-disk response cache. Default: true. */
+  cache?: boolean;
+  /** Cache freshness window in ms. */
+  cacheTtl?: number;
 }
 
 /** Validate and normalize a user-supplied URL, defaulting the scheme to https. */
@@ -195,6 +200,14 @@ export async function fetchUrl(
 ): Promise<FetchedPage> {
   const timeout = options.timeout ?? DEFAULT_TIMEOUT;
   const userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
+  const useCache = options.cache ?? true;
+  // Canonical cache key (also validates the URL up front).
+  const key = normalizeUrl(input).href;
+
+  if (useCache) {
+    const cached = await readCache(key, options.cacheTtl);
+    if (cached) return cached;
+  }
 
   let current = input;
   for (let hop = 0; ; hop++) {
@@ -204,6 +217,7 @@ export async function fetchUrl(
       current = refresh;
       continue;
     }
+    if (useCache) await writeCache(key, page);
     return page;
   }
 }

@@ -22,6 +22,7 @@ const TOP_LEVEL_HELP = [
   "Flags:",
   "  --full            Return full content (skip truncation)",
   "  --no-links        Omit outbound links",
+  "  --no-cache        Bypass the on-disk response cache",
   "  --timeout <ms>    Network timeout in milliseconds (default 10000)",
   "  --max <chars>     Truncate content to N chars (default 1500)",
   "",
@@ -78,6 +79,9 @@ function parseFetchArgs(args: string[]): ParsedFetchArgs {
         break;
       case "--no-links":
         options.includeLinks = false;
+        break;
+      case "--no-cache":
+        options.cache = false;
         break;
       case "--timeout":
         options.timeout = readNumber(flag, takeValue());

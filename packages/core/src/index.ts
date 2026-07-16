@@ -25,6 +25,8 @@ export async function axiFetch(
   const page = await fetchUrl(url, {
     timeout: options.timeout,
     userAgent: options.userAgent,
+    cache: options.cache,
+    cacheTtl: options.cacheTtl,
   });
   return extractFromHtml(page.html, page.finalUrl, options);
 }

@@ -18,6 +18,10 @@ export interface AxiFetchOptions {
   full?: boolean;
   /** Override the User-Agent header. */
   userAgent?: string;
+  /** Use the on-disk response cache. Default: true. */
+  cache?: boolean;
+  /** Cache freshness window in ms. Default: 15 minutes. */
+  cacheTtl?: number;
 }
 
 export interface Metadata {

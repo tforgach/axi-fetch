@@ -29,6 +29,7 @@ axi-fetch example.com --full          # skip content truncation
 axi-fetch example.com --no-links      # omit outbound links
 axi-fetch example.com --timeout 20000 # slow sites
 axi-fetch example.com --max 3000      # raise the truncation limit
+axi-fetch example.com --no-cache      # bypass the 15-min disk cache
 ```
 
 ## Output
