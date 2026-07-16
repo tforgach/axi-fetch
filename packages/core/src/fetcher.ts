@@ -5,6 +5,11 @@ const DEFAULT_USER_AGENT =
   "axi-fetch/0.1 (+https://github.com/travisforgach/axi-fetch)";
 // How many HTML meta-refresh hops to follow (native fetch handles HTTP 3xx).
 const MAX_META_HOPS = 3;
+// Retry transient failures (network blips, 429, 5xx) with exponential backoff.
+const MAX_RETRIES = 2;
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export interface FetchedPage {
   html: string;
@@ -124,10 +129,19 @@ async function fetchOnce(
   }
 
   if (!response.ok) {
-    throw new AxiError(
-      `HTTP ${response.status} ${response.statusText} for ${url.href}`,
-      "HTTP_ERROR",
-    );
+    const where = `${response.status} ${response.statusText} for ${url.href}`;
+    if (response.status === 401 || response.status === 403) {
+      throw new AxiError(
+        `HTTP ${where} — the site appears to be blocking automated requests`,
+        "FORBIDDEN",
+        [
+          "Some sites block bots; this usually can't be worked around from a plain fetch",
+        ],
+      );
+    }
+    // 429/5xx are transient — code them so the retry wrapper knows to retry.
+    const code = RETRYABLE_STATUS.has(response.status) ? "SERVER_ERROR" : "HTTP_ERROR";
+    throw new AxiError(`HTTP ${where}`, code);
   }
 
   const contentType = response.headers.get("content-type") ?? "";
@@ -141,6 +155,33 @@ async function fetchOnce(
 
   const html = decodeBody(await response.arrayBuffer(), contentType);
   return { html, finalUrl: response.url || url.href, status: response.status, contentType };
+}
+
+/** Transient failures worth another attempt: network blips and 429/5xx. */
+function isRetryable(error: unknown): boolean {
+  return (
+    error instanceof AxiError &&
+    (error.code === "FETCH_FAILED" || error.code === "SERVER_ERROR")
+  );
+}
+
+/** fetchOnce with exponential backoff on transient failures. */
+async function fetchWithRetry(
+  input: string,
+  timeout: number,
+  userAgent: string,
+): Promise<FetchedPage> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fetchOnce(input, timeout, userAgent);
+    } catch (error) {
+      lastError = error;
+      if (!isRetryable(error) || attempt === MAX_RETRIES) break;
+      await sleep(250 * 2 ** attempt);
+    }
+  }
+  throw lastError;
 }
 
 /**
@@ -157,7 +198,7 @@ export async function fetchUrl(
 
   let current = input;
   for (let hop = 0; ; hop++) {
-    const page = await fetchOnce(current, timeout, userAgent);
+    const page = await fetchWithRetry(current, timeout, userAgent);
     const refresh = metaRefreshTarget(page.html, page.finalUrl);
     if (refresh && refresh !== page.finalUrl && hop < MAX_META_HOPS) {
       current = refresh;
