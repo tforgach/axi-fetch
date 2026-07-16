@@ -27,7 +27,7 @@ pnpm install
 pnpm --filter @travis/axi-fetch build
 
 # Run the CLI
-node packages/core/dist/cli.js https://en.wikipedia.org/wiki/Token_bucket
+node packages/core/dist/cli.js https://en.wikipedia.org/wiki/Napoleon 
 ```
 
 ## CLI
@@ -77,22 +77,19 @@ URL → fetch (native) → detect type (rules) → extract (Readability / cheeri
 readable-markdown (Readability→markdown) baseline. Run it with `pnpm bench`;
 results land in `packages/bench/results/`.
 
-Median across the initial 6-page set (o200k / GPT-4o tokenizer):
+Median across the initial 6-page set (tiktoken proxy):
 
 | Comparison | Median savings |
 |---|--:|
-| TOON vs raw HTML | **97%** |
-| TOON (default) vs readable markdown | **81.2%** |
-| TOON (--full) vs readable markdown | **45.1%** |
+| TOON vs raw HTML | **98.2%** |
+| TOON (default) vs readable markdown | **85.9%** |
+| TOON (--full) vs readable markdown | **38.2%** |
 
 Most of the win comes from extraction + truncation; TOON's format advantage
-shows up on structured data (code blocks, tables) more than prose — which is why
-lifting those out into structured fields raised the format-only win. See
-[ROADMAP.md](./ROADMAP.md). On trivially small pages the fixed metadata overhead
-can make output net-larger — a documented tradeoff (addressed on the roadmap).
+shows up on structured data more than prose. On trivially small pages the fixed
+metadata overhead can make output net-larger — a documented tradeoff.
 
 ## Status
 
 MVP core is working end-to-end (fetch → detect → extract → TOON), with a
-benchmark harness. Not yet published to npm. See [ROADMAP.md](./ROADMAP.md) for
-prioritized next steps.
+benchmark harness. Not yet published to npm.
