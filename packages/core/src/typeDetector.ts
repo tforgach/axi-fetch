@@ -11,13 +11,57 @@ export interface TypeDetection {
 
 const ARTICLE_PATH = /\/(blog|article|articles|news|post|posts|story|p)\//i;
 const ARTICLE_SCHEMA = /(News|Blog|Tech|Scholarly)?Article|BlogPosting/i;
+const DOC_HOST = /^(docs?|developer|devcenter|devdocs|api|readthedocs)\./i;
+const DOC_PATH = /\/(docs?|documentation|reference|guide|guides|manual|handbook|api)(\/|$)/i;
 
 /**
- * Rules-based (no LLM) detection of whether a page is an article or generic.
+ * Documentation detection runs first: docs pages are structurally distinct
+ * (URL conventions + code-heavy) and shouldn't be mislabeled as generic.
+ */
+function detectDocumentation($: cheerio.CheerioAPI, url: string): TypeDetection | null {
+  const hints: string[] = [];
+  let score = 0;
+
+  try {
+    const parsed = new URL(url);
+    if (DOC_HOST.test(parsed.hostname)) {
+      score += 2;
+      hints.push("docs-host");
+    }
+    if (DOC_PATH.test(parsed.pathname)) {
+      score += 2;
+      hints.push("docs-path");
+    }
+  } catch {
+    // ignore malformed url
+  }
+
+  // Code-heavy pages are a strong documentation signal.
+  const codeBlocks = $("pre").length;
+  if (codeBlocks >= 3) {
+    score += 2;
+    hints.push("code-heavy");
+  } else if (codeBlocks >= 1) {
+    score += 1;
+    hints.push("has-code");
+  }
+
+  if (score >= 3) {
+    return { type: "documentation", confidence: Math.min(0.5 + score * 0.1, 0.97), hints };
+  }
+  return null;
+}
+
+/**
+ * Rules-based (no LLM) detection of documentation, article, or generic pages.
  * Signals are additive; confidence reflects how many fired.
  */
 export function detectType(html: string, url: string): TypeDetection {
   const $ = cheerio.load(html);
+
+  const docs = detectDocumentation($, url);
+  if (docs) return docs;
+
   const hints: string[] = [];
   let score = 0;
 

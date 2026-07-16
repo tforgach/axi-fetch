@@ -20,6 +20,20 @@ describe("detectType", () => {
     expect(result.hints).toContain("schema.org-article");
   });
 
+  it("detects documentation from a docs URL + code blocks", () => {
+    const html = `<html><body><pre>a</pre><pre>b</pre><pre>c</pre></body></html>`;
+    const result = detectType(html, "https://docs.python.org/3/tutorial/");
+    expect(result.type).toBe("documentation");
+    expect(result.confidence).toBeGreaterThan(0.8);
+    expect(result.hints).toContain("docs-host");
+  });
+
+  it("detects documentation from a /docs/ path", () => {
+    const html = `<html><body><pre>x</pre></body></html>`;
+    const result = detectType(html, "https://example.com/docs/api/reference");
+    expect(result.type).toBe("documentation");
+  });
+
   it("falls back to generic with no article signals", () => {
     const html = `<html><body><div><p>Just a page.</p></div></body></html>`;
     const result = detectType(html, "https://site.com/random");

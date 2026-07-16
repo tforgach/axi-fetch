@@ -48,7 +48,7 @@ sections[2]{heading,level}:
 help[1]: Re-run with `--full` to get the complete content
 ```
 
-- `type` is `article` or `generic` (MVP scope).
+- `type` is `article`, `documentation`, or `generic`.
 - `truncated: true` means content was cut to the limit — re-run with `--full`.
 - `help` lists next-step suggestions; follow a link with another `axi-fetch <url>`.
 

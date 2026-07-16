@@ -34,10 +34,7 @@ export function extractArticle(
 
   // Readability bails on pages without a clear article body; fall back cleanly.
   if (!parsed || !parsed.textContent?.trim()) {
-    return {
-      title: dom.window.document.title || url,
-      content: extractGeneric(html, url, includeLinks),
-    };
+    return extractGeneric(html, url, includeLinks);
   }
 
   const $ = cheerio.load(parsed.content ?? "");

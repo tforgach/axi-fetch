@@ -50,8 +50,9 @@ export function extractFromHtml(
     title = article.title;
     content = article.content;
   } else {
-    content = extractGeneric(html, url, includeLinks);
-    title = deriveTitle(html) || url;
+    const generic = extractGeneric(html, url, includeLinks);
+    title = generic.title;
+    content = generic.content;
   }
 
   const fullLength = content.main.length;
@@ -77,11 +78,6 @@ export function extractFromHtml(
   };
 
   return { axiResponse, toonOutput: toToon(axiResponse) };
-}
-
-function deriveTitle(html: string): string {
-  const match = /<title[^>]*>([^<]*)<\/title>/i.exec(html);
-  return match?.[1]?.trim() ?? "";
 }
 
 function buildNextSteps(content: Content, includeLinks: boolean): string[] {

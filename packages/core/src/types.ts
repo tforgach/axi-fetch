@@ -1,8 +1,8 @@
 /**
  * Page categories the MVP can extract. Kept intentionally small (AXI principle 2:
- * minimal schemas). More types (documentation, pricing, product) are Phase 2.
+ * minimal schemas). More types (pricing, product) are Phase 2.
  */
-export type PageType = "article" | "generic";
+export type PageType = "article" | "documentation" | "generic";
 
 export interface AxiFetchOptions {
   /** Include outbound links in the response. Default: true. */

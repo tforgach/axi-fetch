@@ -6,7 +6,13 @@ import {
   extractProse,
   extractSections,
   extractTables,
+  normalizeText,
 } from "./shared.js";
+
+export interface GenericExtraction {
+  title: string;
+  content: Content;
+}
 
 const NOISE_SELECTORS = [
   "script",
@@ -32,8 +38,13 @@ export function extractGeneric(
   html: string,
   url: string,
   includeLinks: boolean,
-): Content {
+): GenericExtraction {
   const $ = cheerio.load(html);
+  // Read the title before de-noising; cheerio decodes HTML entities for us.
+  const title =
+    normalizeText($("title").first().text()) ||
+    normalizeText($("h1").first().text()) ||
+    url;
   $(NOISE_SELECTORS).remove();
 
   // Pull structured blocks before extractProse strips them from the prose.
@@ -43,11 +54,14 @@ export function extractGeneric(
   const main = extractProse($);
 
   return {
-    main,
-    truncated: false,
-    sections,
-    codeBlocks,
-    tables,
-    links: includeLinks ? extractLinks($, url) : [],
+    title,
+    content: {
+      main,
+      truncated: false,
+      sections,
+      codeBlocks,
+      tables,
+      links: includeLinks ? extractLinks($, url) : [],
+    },
   };
 }
