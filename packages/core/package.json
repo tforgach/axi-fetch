@@ -1,6 +1,6 @@
 {
   "name": "@tforgach/axi-fetch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fetch a URL and get a token-efficient, agent-ready TOON response (AXI-conformant CLI + library)",
   "keywords": [
     "axi",
