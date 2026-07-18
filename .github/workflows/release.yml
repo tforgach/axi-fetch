@@ -1,0 +1,62 @@
+name: Release
+
+# Publish @tforgach/axi-fetch to npm when a version tag is pushed.
+# Flow: `pnpm version` (or manual bump) -> `git tag vX.Y.Z` -> `git push --tags`.
+# No manual OTP: auth is a granular NPM_TOKEN repo secret with publish scope
+# and 2FA-bypass, and npm provenance is signed via GitHub OIDC.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # required for `npm publish --provenance` (OIDC signing)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org" # writes .npmrc using NODE_AUTH_TOKEN
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Guard: the pushed tag must match the package version, so a stale or
+      # mistyped tag can never publish the wrong version.
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./packages/core/package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Tag v$tag does not match packages/core version $pkg"
+            exit 1
+          fi
+          echo "Tag and package version agree: $pkg"
+
+      # Build first so workspace packages can resolve each other's declarations.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Publish from the package dir with npm (best provenance support). core has
+      # no workspace-protocol deps, so a plain npm publish resolves cleanly.
+      - name: Publish to npm
+        working-directory: packages/core
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
