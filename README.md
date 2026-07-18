@@ -104,6 +104,8 @@ pnpm test         # run the test suite
 pnpm bench        # run the token-savings benchmark
 ```
 
+Publishing a new version is tag-driven — see [`RELEASING.md`](RELEASING.md).
+
 ## Status
 
 Published: [`@tforgach/axi-fetch`](https://www.npmjs.com/package/@tforgach/axi-fetch)
