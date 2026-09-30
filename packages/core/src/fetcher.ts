@@ -116,7 +116,8 @@ async function fetchOnce(
       signal: controller.signal,
       headers: {
         "User-Agent": userAgent,
-        Accept: "text/html,application/xhtml+xml",
+        // HTML first, but APIs and text files must not answer 415 (GitHub's API does for HTML-only).
+        Accept: "text/html,application/xhtml+xml,application/json;q=0.9,text/plain;q=0.8,text/markdown;q=0.8,*/*;q=0.5",
       },
     });
   } catch (error) {
@@ -150,17 +151,20 @@ async function fetchOnce(
   }
 
   const contentType = response.headers.get("content-type") ?? "";
-  if (contentType && !/text\/html|application\/xhtml\+xml/i.test(contentType)) {
+  if (contentType && !SUPPORTED_TYPES.test(contentType)) {
     throw new AxiError(
       `Unsupported content type "${contentType}" for ${url.href}`,
-      "NOT_HTML",
-      ["axi-fetch only handles HTML pages in the MVP"],
+      "UNSUPPORTED_TYPE",
+      ["axi-fetch handles HTML, JSON and text pages (not binaries like PDFs or images)"],
     );
   }
 
   const html = decodeBody(await response.arrayBuffer(), contentType);
   return { html, finalUrl: response.url || url.href, status: response.status, contentType };
 }
+
+/** HTML, JSON (incl. +json vendor types), and text formats (plain, Markdown, CSV, …). */
+const SUPPORTED_TYPES = /text\/|application\/xhtml\+xml|application\/(?:[\w.-]+\+)?json/i;
 
 /** Transient failures worth another attempt: network blips and 429/5xx. */
 function isRetryable(error: unknown): boolean {
@@ -212,7 +216,8 @@ export async function fetchUrl(
   let current = input;
   for (let hop = 0; ; hop++) {
     const page = await fetchWithRetry(current, timeout, userAgent);
-    const refresh = metaRefreshTarget(page.html, page.finalUrl);
+    const isHtml = !page.contentType || /html/i.test(page.contentType);
+    const refresh = isHtml ? metaRefreshTarget(page.html, page.finalUrl) : null;
     if (refresh && refresh !== page.finalUrl && hop < MAX_META_HOPS) {
       current = refresh;
       continue;

@@ -4,11 +4,13 @@ import { extractArticle } from "./extractors/article.js";
 import { extractGeneric } from "./extractors/generic.js";
 import { toStructured, toToon } from "./output.js";
 import { findPassages, paginate, sectionText } from "./retrieve.js";
+import { extractJson, extractText, isJsonType, isTextType } from "./extractors/nonhtml.js";
 import type {
   AxiFetchOptions,
   AxiResponse,
   Content,
   FetchResult,
+  PageType,
 } from "./types.js";
 
 // One more agent turn costs far more than 1.5k extra characters, so the default aims to
@@ -34,7 +36,23 @@ export async function axiFetch(
     cache: options.cache,
     cacheTtl: options.cacheTtl,
   });
+  // Non-HTML bodies (JSON APIs, plain text, Markdown) get their own extractors but the same
+  // modes (--find, --section, --full) as HTML.
+  if (isJsonType(page.contentType)) return extractFromJsonText(page.html, page.finalUrl, options);
+  if (isTextType(page.contentType)) return extractFromPlainText(page.html, page.finalUrl, options);
   return extractFromHtml(page.html, page.finalUrl, options);
+}
+
+/** Build an AXI response from a JSON body (no network). */
+export function extractFromJsonText(body: string, url: string, options: AxiFetchOptions = {}): FetchResult {
+  const { title, content } = extractJson(body, url);
+  return finalize(url, title, "json", 1, content, options);
+}
+
+/** Build an AXI response from a plain-text or Markdown body (no network). */
+export function extractFromPlainText(body: string, url: string, options: AxiFetchOptions = {}): FetchResult {
+  const { title, content } = extractText(body, url);
+  return finalize(url, title, "text", 1, content, options);
 }
 
 /**
@@ -47,9 +65,6 @@ export function extractFromHtml(
   options: AxiFetchOptions = {},
 ): FetchResult {
   const includeLinks = options.includeLinks ?? false;
-  const includeCode = options.includeCode ?? false;
-  const maxContentLength = options.maxContentLength ?? DEFAULT_MAX_CONTENT_LENGTH;
-
   const detection = detectType(html, url);
 
   let title: string;
@@ -63,7 +78,21 @@ export function extractFromHtml(
     title = generic.title;
     content = generic.content;
   }
+  return finalize(url, title, detection.type, detection.confidence, content, options);
+}
 
+/** Apply the output modes (default / --find / --section / --full) shared by every content type. */
+function finalize(
+  url: string,
+  title: string,
+  type: PageType,
+  confidence: number,
+  extracted: Content,
+  options: AxiFetchOptions,
+): FetchResult {
+  const includeCode = options.includeCode ?? false;
+  const maxContentLength = options.maxContentLength ?? DEFAULT_MAX_CONTENT_LENGTH;
+  let content = extracted;
   const fullLength = content.main.length;
   if (!includeCode && content.codeBlocks.length > 0) {
     content = { ...content, codeBlocks: [], omittedCodeBlocks: content.codeBlocks.length };
@@ -95,8 +124,8 @@ export function extractFromHtml(
     metadata: {
       url,
       title,
-      type: detection.type,
-      confidence: detection.confidence,
+      type,
+      confidence,
       fetchedAt: new Date().toISOString(),
       contentLength: fullLength,
     },
