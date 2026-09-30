@@ -25,35 +25,41 @@ Requires Node 20+.
 
 ## CLI
 
-```sh
+```
 axi-fetch <url> [flags]
 
---full            Return full content (skip truncation)
---no-links        Omit outbound links
+--find <terms>    Only the passages matching these keywords (fastest way to a specific fact)
+--section <name>  One section by heading (see the sections list)
+--full            Everything, in pages of 16k chars
+--page <n>        Page of --full / --section output
+--max <chars>     Opening content length (default 3000)
+--links           Include outbound links
+--code            Include code blocks (a count is shown otherwise)
 --no-cache        Bypass the on-disk response cache
 --timeout <ms>    Network timeout (default 10000)
---max <chars>     Truncate content to N chars (default 1500)
 ```
 
-Example:
+Looking for a specific fact? Pass `--find` on the first call and get only the matching
+passages, each with its section:
 
 ```sh
-axi-fetch https://en.wikipedia.org/wiki/Token_bucket
+axi-fetch https://en.wikipedia.org/wiki/Token_bucket --find "leaky bucket meter"
 ```
 
 ```
 url: "https://en.wikipedia.org/wiki/Token_bucket"
 title: Token bucket
 type: article
-confidence: 0.8
-contentLength: 7800
-truncated: true
-content: The token bucket is an algorithm used in packet-switched networks...
-sections[2]{heading,level}:
-  Comparison to leaky bucket,2
-  Hierarchical token bucket,2
-help[1]: Re-run with `--full` to get the complete content
+contentLength: 7799
+passages[8]{section,text}:
+  "","The token bucket is an algorithm used in packet-switched and telecommunications networks. …"
+  …
+  Comparison to leaky bucket,"… the leaky bucket algorithm as a meter. This is a mirror image of the token bucket, …"
+  …
 ```
+
+Without `--find` you get the opening content (3000 chars), the sections list, and next-step
+hints (`--find`, `--section`, `--full`, `--page`).
 
 Failures print a structured error and use a non-zero exit code (2 for bad
 input/flags, 1 otherwise).
