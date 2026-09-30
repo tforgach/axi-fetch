@@ -4,7 +4,7 @@ import { axiFetch } from "./index.js";
 import { toStructured, type AxiStructuredOutput } from "./output.js";
 import type { AxiFetchOptions } from "./types.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0-dev";
 const DESCRIPTION =
   "Fetch a URL and get a token-efficient, agent-ready TOON response";
 
@@ -20,21 +20,26 @@ const TOP_LEVEL_HELP = [
   "  axi-fetch fetch <url> [flags]",
   "",
   "Flags:",
-  "  --full            Return full content (skip truncation)",
-  "  --no-links        Omit outbound links",
+  "  --find <terms>    Only the passages matching these keywords (fastest way to a specific fact)",
+  "  --section <name>  One section by heading (see the sections list)",
+  "  --full            Everything, in pages of 16k chars (--page N)",
+  "  --page <n>        Page of --full / --section output",
+  "  --max <chars>     Opening content length (default 3000)",
+  "  --links           Include outbound links",
+  "  --code            Include code blocks",
   "  --no-cache        Bypass the on-disk response cache",
   "  --timeout <ms>    Network timeout in milliseconds (default 10000)",
-  "  --max <chars>     Truncate content to N chars (default 1500)",
   "",
   "Examples:",
   "  axi-fetch https://example.com/article",
-  "  axi-fetch example.com --full --no-links",
+  '  axi-fetch https://docs.python.org/3/library/asyncio-task.html --find "timeout added version"',
+  '  axi-fetch https://en.wikipedia.org/wiki/Token_bucket --section "Comparison"',
 ].join("\n");
 
 const FETCH_HELP = [
   "axi-fetch <url> — fetch and extract a page as TOON",
   "",
-  "Flags: --full, --no-links, --timeout <ms>, --max <chars>",
+  "Flags: --find <terms>, --section <name>, --full, --page <n>, --max <chars>, --links, --code, --timeout <ms>",
 ].join("\n");
 
 interface ParsedFetchArgs {
@@ -77,8 +82,29 @@ function parseFetchArgs(args: string[]): ParsedFetchArgs {
       case "--full":
         options.full = true;
         break;
-      case "--no-links":
+      case "--no-links": // default now; kept for compatibility
         options.includeLinks = false;
+        break;
+      case "--links":
+        options.includeLinks = true;
+        break;
+      case "--code":
+        options.includeCode = true;
+        break;
+      case "--find": {
+        const v = takeValue();
+        if (!v) throw new AxiError("Flag --find requires keywords", "VALIDATION_ERROR");
+        options.find = v;
+        break;
+      }
+      case "--section": {
+        const v = takeValue();
+        if (!v) throw new AxiError("Flag --section requires a heading", "VALIDATION_ERROR");
+        options.section = v;
+        break;
+      }
+      case "--page":
+        options.page = readNumber(flag, takeValue());
         break;
       case "--no-cache":
         options.cache = false;
@@ -98,7 +124,7 @@ function parseFetchArgs(args: string[]): ParsedFetchArgs {
 
   if (!url) {
     throw new AxiError("Missing URL argument", "VALIDATION_ERROR", [
-      "Usage: axi-fetch <url> [--full] [--no-links] [--timeout <ms>] [--max <chars>]",
+      'Usage: axi-fetch <url> [--find "<terms>"] [--section "<heading>"] [--full] [--page <n>]',
     ]);
   }
 
@@ -128,7 +154,7 @@ await runAxiCli({
   commands: { fetch: fetchCommand },
   home: () => ({
     description: DESCRIPTION,
-    usage: "axi-fetch <url> [--full] [--no-links] [--timeout <ms>] [--max <chars>]",
+    usage: 'axi-fetch <url> [--find "<terms>"] [--section "<heading>"] [--full] [--page <n>]',
     example: "axi-fetch https://example.com/article",
     help: ["Run `axi-fetch --help` for the full reference"],
   }),

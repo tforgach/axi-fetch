@@ -5,13 +5,24 @@
 export type PageType = "article" | "documentation" | "generic";
 
 export interface AxiFetchOptions {
-  /** Include outbound links in the response. Default: true. */
+  /** Include outbound links in the response. Default: false (`--links`). */
   includeLinks?: boolean;
+  /** Include extracted code blocks. Default: false (`--code`); a count is shown instead. */
+  includeCode?: boolean;
+  /**
+   * Return only the passages matching these terms (`--find`), ranked without an LLM,
+   * instead of the page's opening content. The fast path to a specific fact.
+   */
+  find?: string;
+  /** Return one section by heading (`--section`, case-insensitive substring match). */
+  section?: string;
+  /** Page number for long `--full` / `--section` output (`--page`, 1-based). */
+  page?: number;
   /** Network timeout in milliseconds. Default: 10000. */
   timeout?: number;
   /**
    * Max characters of main content before truncation (AXI principle 3).
-   * Default: 1500. Ignored when `full` is true.
+   * Default: 3000. Ignored when `full` is true.
    */
   maxContentLength?: number;
   /** Bypass truncation and return full content (the `--full` escape hatch). */
@@ -40,6 +51,21 @@ export interface Link {
   text: string;
   url: string;
   kind: "internal" | "external";
+}
+
+/** A prose block (paragraph, list item, …) tagged with the section it sits under. */
+export interface Block {
+  /** Nearest preceding heading, or null before the first heading. */
+  section: string | null;
+  /** That heading's level (2–6), or 1 before the first heading. */
+  level: number;
+  text: string;
+}
+
+/** A passage returned by `--find`: matching text plus where it came from. */
+export interface Passage {
+  section: string | null;
+  text: string;
 }
 
 /** A heading in the content outline. Text lives in `Content.main`, not here. */
@@ -74,6 +100,14 @@ export interface Content {
   tables: Table[];
   /** Relevant outbound links, if `includeLinks` was set. */
   links: Link[];
+  /** Prose blocks with their section (internal; drives `--find` and `--section`). */
+  blocks: Block[];
+  /** Passages matching `--find`, in document order. */
+  passages?: Passage[];
+  /** Paging for long `--full` / `--section` output. */
+  page?: { number: number; of: number };
+  /** Code blocks present on the page but omitted (pass `--code`). */
+  omittedCodeBlocks?: number;
 }
 
 export interface AxiResponse {

@@ -10,7 +10,7 @@ import {
 describe("extractProse", () => {
   it("separates block boundaries instead of gluing words", () => {
     const $ = cheerio.load("<div><h2>Title</h2><p>First para.</p><p>Second.</p></div>");
-    const prose = extractProse($);
+    const prose = extractProse($).main;
     expect(prose).not.toContain("TitleFirst");
     expect(prose).toContain("First para.");
     expect(prose).toContain("Second.");
@@ -23,7 +23,7 @@ describe("extractProse", () => {
         <p>Napoleon<sup class="reference">[1]</sup> was Emperor[b].</p>
       </div>`,
     );
-    const prose = extractProse($);
+    const prose = extractProse($).main;
     expect(prose).not.toContain("Reign");
     expect(prose).not.toContain("[1]");
     expect(prose).not.toContain("[b]");
@@ -95,5 +95,15 @@ describe("extractLinks", () => {
     expect(urls.some((u) => u.includes("#cite_note"))).toBe(false);
     expect(urls.some((u) => u.includes("Napoleon#Death"))).toBe(false);
     expect(links.find((l) => l.url.includes("other.com"))?.kind).toBe("external");
+  });
+});
+
+describe("docs-site prose (Sphinx)", () => {
+  it("keeps cross-reference identifiers, joins <dt> terms to their <dd>, drops ¶ anchors", async () => {
+    const cheerio = await import("cheerio");
+    const $ = cheerio.load(`<h2>Timeouts<a class="headerlink" href="#t">¶</a></h2>
+      <dl><dt>asyncio.timeout(delay)</dt><dd><p>Return an <a class="reference internal" href="#x"><code>asynchronous context manager</code></a>.</p></dd></dl>`);
+    const { blocks } = extractProse($);
+    expect(blocks).toEqual([{ section: "Timeouts", level: 2, text: "asyncio.timeout(delay) — Return an asynchronous context manager." }]);
   });
 });

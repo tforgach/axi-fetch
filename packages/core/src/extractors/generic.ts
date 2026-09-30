@@ -26,6 +26,7 @@ const NOISE_SELECTORS = [
   "template",
   "svg",
   "[aria-hidden='true']",
+  "[role='navigation']",
 ].join(", ");
 
 /**
@@ -51,7 +52,7 @@ export function extractGeneric(
   const sections = extractSections($);
   const codeBlocks = extractCodeBlocks($);
   const tables = extractTables($);
-  const main = extractProse($);
+  const { main, blocks } = extractProse($);
 
   return {
     title,
@@ -62,6 +63,7 @@ export function extractGeneric(
       codeBlocks,
       tables,
       links: includeLinks ? extractLinks($, url) : [],
+      blocks,
     },
   };
 }

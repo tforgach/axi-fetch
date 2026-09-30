@@ -23,9 +23,9 @@ const sample: AxiResponse = {
 };
 
 describe("toStructured", () => {
-  it("rounds confidence and preserves field order", () => {
+  it("omits confidence (not actionable) and preserves field order", () => {
     const out = toStructured(sample);
-    expect(out.confidence).toBe(0.84);
+    expect(out.confidence).toBeUndefined();
     expect(Object.keys(out).slice(0, 3)).toEqual(["url", "title", "type"]);
   });
 

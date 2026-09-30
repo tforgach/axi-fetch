@@ -15,43 +15,35 @@ when you need the *content* of a page, not a full DOM.
 
 ## Usage
 
-Run it via shell:
+`axi-fetch` is already installed and on your PATH. Run it directly in Bash (not via `npx` or a path):
 
 ```sh
-axi-fetch <url>
+axi-fetch <url>                                   # title, opening content (3000 chars), sections
+axi-fetch <url> --find "<keywords>"               # only the passages matching the keywords
+axi-fetch <url> --section "<heading>"             # one section from the sections list
+axi-fetch <url> --full [--page 2]                 # everything, in 16k-char pages
 ```
 
-Examples:
-
-```sh
-axi-fetch https://en.wikipedia.org/wiki/Token_bucket
-axi-fetch example.com --full          # skip content truncation
-axi-fetch example.com --no-links      # omit outbound links
-axi-fetch example.com --timeout 20000 # slow sites
-axi-fetch example.com --max 3000      # raise the truncation limit
-axi-fetch example.com --no-cache      # bypass the 15-min disk cache
-```
+**Looking for a specific fact? Pass `--find` on the first call.** It returns just the matching
+passages (with their section), so you rarely need a second call. Other flags: `--links` (outbound
+links), `--code` (code blocks), `--max <chars>`, `--timeout <ms>`, `--no-cache`.
 
 ## Output
 
-TOON on stdout, e.g.:
+TOON on stdout, e.g. for `axi-fetch https://en.wikipedia.org/wiki/Token_bucket --find "leaky bucket meter"`:
 
 ```
 url: "https://en.wikipedia.org/wiki/Token_bucket"
 title: Token bucket
 type: article
-confidence: 0.8
-truncated: true
-content: From Wikipedia, the free encyclopedia The token bucket is...
-sections[2]{heading,level}:
-  Comparison to leaky bucket,2
-  Hierarchical token bucket,2
-help[1]: Re-run with `--full` to get the complete content
+contentLength: 7799
+passages[2]{section,text}:
+  Comparison to leaky bucket,"The leaky bucket algorithm … used as a meter, is exactly equivalent to (a mirror image of) the token bucket …"
+  …
 ```
 
-- `type` is `article`, `documentation`, or `generic`.
-- `truncated: true` means content was cut to the limit — re-run with `--full`.
-- `help` lists next-step suggestions; follow a link with another `axi-fetch <url>`.
+- Without `--find`, `truncated: true` means the opening content was cut: use `--find` or `--section`.
+- `help` lists next steps (e.g. `--page 2`, omitted code blocks).
 
 ## Errors
 
@@ -61,10 +53,4 @@ input/flags, 1 otherwise):
 ```
 error: "HTTP 404 Not Found for https://example.com/missing"
 code: HTTP_ERROR
-```
-
-## Install
-
-```sh
-npm install -g @tforgach/axi-fetch
 ```

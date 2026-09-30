@@ -44,7 +44,7 @@ export function extractArticle(
   const sections = extractSections($);
   const codeBlocks = extractCodeBlocks($);
   const tables = extractTables($);
-  const main = extractProse($);
+  const { main, blocks } = extractProse($);
 
   return {
     title: normalizeText(parsed.title || dom.window.document.title || url),
@@ -55,6 +55,7 @@ export function extractArticle(
       codeBlocks,
       tables,
       links: includeLinks ? extractLinks($, url) : [],
+      blocks,
     },
   };
 }

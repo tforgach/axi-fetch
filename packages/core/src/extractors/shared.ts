@@ -1,5 +1,5 @@
 import type { CheerioAPI } from "cheerio";
-import type { CodeBlock, Link, Section, Table } from "../types.js";
+import type { Block, CodeBlock, Link, Section, Table } from "../types.js";
 
 const MAX_LINKS = 5;
 const MAX_SECTIONS = 25;
@@ -14,10 +14,12 @@ export function normalizeText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-// Noise stripped before reading prose: citation markers, edit links, tables and
-// code blocks (extracted separately as structured data), and raw styles.
-const PROSE_NOISE =
-  "sup.reference, .mw-editsection, .reference, table, pre, style";
+// Noise stripped before reading prose: citation markers, edit links, heading anchors
+// ("¶"), tables and code blocks (extracted separately as structured data), and raw
+// styles. Only `sup.reference` is a citation marker: Sphinx docs put the `reference`
+// class on every cross-reference link, and removing those deleted identifiers like
+// `asyncio.timeout()` from the prose.
+const PROSE_NOISE = "sup.reference, .mw-editsection, .headerlink, table, pre, style";
 
 // Block-level elements that carry article prose, read in document order.
 const PROSE_BLOCKS = "p, li, blockquote, h2, h3, h4, h5, h6, dd";
@@ -31,16 +33,33 @@ const FOOTNOTE_TEXT = /^\[[0-9a-z]+\]$/i;
  * textContent). Nested blocks are de-duplicated by skipping any block that lives
  * inside another prose block, since the ancestor already covers its text.
  */
-export function extractProse($: CheerioAPI): string {
+export function extractProse($: CheerioAPI): { main: string; blocks: Block[] } {
   $(PROSE_NOISE).remove();
 
   const parts: string[] = [];
+  const blocks: Block[] = [];
+  let section: string | null = null;
+  let level = 1;
   $(PROSE_BLOCKS).each((_, el) => {
     if ($(el).parents(PROSE_BLOCKS).length > 0) return;
-    const text = stripCitationMarkers(normalizeText($(el).text()));
-    if (text) parts.push(text);
+    let text = stripCitationMarkers(normalizeText($(el).text()));
+    if (!text) return;
+    // A definition's body is meaningless without its term (e.g. an API signature in <dt>).
+    if (($(el).prop("tagName") ?? "").toLowerCase() === "dd") {
+      const term = stripCitationMarkers(normalizeText($(el).prevAll("dt").first().text()));
+      if (term) text = `${term} — ${text}`;
+    }
+    parts.push(text);
+    // Headings open a section; everything until the next heading belongs to it.
+    const tag = ($(el).prop("tagName") ?? "").toLowerCase();
+    if (/^h[2-6]$/.test(tag)) {
+      section = text;
+      level = Number(tag[1]);
+    } else {
+      blocks.push({ section, level, text });
+    }
   });
-  return parts.join("\n");
+  return { main: parts.join("\n"), blocks };
 }
 
 /** Remove inline citation/footnote markers like "[1]" or "[b]" left in prose. */

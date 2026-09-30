@@ -19,6 +19,7 @@ export function toStructured(response: AxiResponse): AxiStructuredOutput {
   const { metadata, content, nextSteps } = response;
 
   const hasStructure =
+    Boolean(content.passages) ||
     content.sections.length > 0 ||
     content.codeBlocks.length > 0 ||
     content.tables.length > 0 ||
@@ -31,15 +32,21 @@ export function toStructured(response: AxiResponse): AxiStructuredOutput {
     type: metadata.type,
   };
 
-  // Quality/aggregate fields aren't worth the tokens on trivially small pages.
+  // Size hint (AXI principle 3) isn't worth the tokens on trivially small pages.
   if (!isSmall) {
-    output.confidence = Number(metadata.confidence.toFixed(2));
     output.contentLength = metadata.contentLength;
   }
   if (content.truncated) {
     output.truncated = true;
   }
-  output.content = content.main;
+  if (content.page) {
+    output.page = `${content.page.number}/${content.page.of}`;
+  }
+  if (content.passages) {
+    output.passages = content.passages.map((p) => ({ section: p.section ?? "", text: p.text }));
+  } else {
+    output.content = content.main;
+  }
 
   if (content.sections.length > 0) {
     output.sections = content.sections;
