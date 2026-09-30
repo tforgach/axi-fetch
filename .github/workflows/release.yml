@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org" # writes .npmrc using NODE_AUTH_TOKEN
+          # v5 auto-caches the packageManager (pnpm) before corepack has enabled it,
+          # failing with "Unable to locate executable file: pnpm".
+          package-manager-cache: false
 
       - name: Enable corepack (pnpm)
         run: corepack enable
