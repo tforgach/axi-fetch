@@ -26,11 +26,11 @@ export function toStructured(response: AxiResponse): AxiStructuredOutput {
     content.links.length > 0;
   const isSmall = metadata.contentLength < SMALL_PAGE_CHARS && !hasStructure;
 
-  const output: AxiStructuredOutput = {
-    url: metadata.url,
-    title: metadata.title,
-    type: metadata.type,
-  };
+  // Envelope kept minimal: the agent knows the URL it requested (shown only after a redirect),
+  // and the page type isn't actionable.
+  const output: AxiStructuredOutput = {};
+  if (metadata.redirected) output.url = metadata.url;
+  output.title = metadata.title;
 
   // Size hint (AXI principle 3) isn't worth the tokens on trivially small pages.
   if (!isSmall) {

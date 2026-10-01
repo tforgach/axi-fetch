@@ -1,4 +1,4 @@
-import { fetchUrl } from "./fetcher.js";
+import { fetchUrl, normalizeUrl } from "./fetcher.js";
 import { detectType } from "./typeDetector.js";
 import { extractArticle } from "./extractors/article.js";
 import { extractGeneric } from "./extractors/generic.js";
@@ -38,9 +38,17 @@ export async function axiFetch(
   });
   // Non-HTML bodies (JSON APIs, plain text, Markdown) get their own extractors but the same
   // modes (--find, --section, --full) as HTML.
-  if (isJsonType(page.contentType)) return extractFromJsonText(page.html, page.finalUrl, options);
-  if (isTextType(page.contentType)) return extractFromPlainText(page.html, page.finalUrl, options);
-  return extractFromHtml(page.html, page.finalUrl, options);
+  const result = isJsonType(page.contentType)
+    ? extractFromJsonText(page.html, page.finalUrl, options)
+    : isTextType(page.contentType)
+      ? extractFromPlainText(page.html, page.finalUrl, options)
+      : extractFromHtml(page.html, page.finalUrl, options);
+  // The agent knows the URL it asked for; only a redirect makes the final URL worth repeating.
+  if (normalizeUrl(url).href !== page.finalUrl) {
+    result.axiResponse.metadata.redirected = true;
+    result.toonOutput = toToon(result.axiResponse);
+  }
+  return result;
 }
 
 /** Build an AXI response from a JSON body (no network). */

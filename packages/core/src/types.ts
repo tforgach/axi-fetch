@@ -45,6 +45,8 @@ export interface Metadata {
   fetchedAt: string;
   /** Length (chars) of the full extracted main content, before truncation. */
   contentLength: number;
+  /** True when the fetch ended at a different URL than requested (redirect). */
+  redirected?: boolean;
 }
 
 export interface Link {

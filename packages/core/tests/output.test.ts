@@ -23,10 +23,13 @@ const sample: AxiResponse = {
 };
 
 describe("toStructured", () => {
-  it("omits confidence (not actionable) and preserves field order", () => {
+  it("keeps the envelope minimal: no confidence, no type, url only after a redirect", () => {
     const out = toStructured(sample);
     expect(out.confidence).toBeUndefined();
-    expect(Object.keys(out).slice(0, 3)).toEqual(["url", "title", "type"]);
+    expect(out.type).toBeUndefined();
+    expect(Object.keys(out)[0]).toBe("title");
+    const redirected = toStructured({ ...sample, metadata: { ...sample.metadata, redirected: true } });
+    expect(Object.keys(redirected).slice(0, 2)).toEqual(["url", "title"]);
   });
 
   it("omits empty collections to save tokens", () => {
@@ -54,7 +57,7 @@ describe("toToon", () => {
   it("produces TOON smaller than the equivalent JSON", () => {
     const toon = toToon(sample);
     const json = JSON.stringify(toStructured(sample), null, 2);
-    expect(toon).toContain("type: article");
+    expect(toon).toContain(`title: ${sample.metadata.title}`);
     expect(toon.length).toBeLessThan(json.length);
   });
 });
