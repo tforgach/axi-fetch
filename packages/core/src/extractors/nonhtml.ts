@@ -11,6 +11,14 @@ const MARKDOWN = /^(#{1,6})\s+(.*)$/;
 // Page furniture in paginated text (RFC headers/footers).
 const FURNITURE = /(\[Page \d+\]\s*$)|(^RFC \d+\s{2,}.*\s{2,}\w+ \d{4}\s*$)/;
 
+function fileName(url: string): string {
+  try {
+    return decodeURIComponent(new URL(url).pathname.split("/").pop() || url);
+  } catch {
+    return url;
+  }
+}
+
 /** Plain text / Markdown: paragraphs become section-tagged blocks; headings drive --section. */
 export function extractText(body: string, url: string): { title: string; content: Content } {
   const lines = body.replace(/\f/g, "\n").split(/\r?\n/).filter((l) => !FURNITURE.test(l));
@@ -46,7 +54,7 @@ export function extractText(body: string, url: string): { title: string; content
   }
   flush();
   return {
-    title: title ?? decodeURIComponent(new URL(url).pathname.split("/").pop() || url),
+    title: title ?? fileName(url),
     content: { ...empty(), main: mainParts.join("\n"), blocks, sections },
   };
 }
@@ -73,12 +81,21 @@ export function extractJson(body: string, url: string): { title: string; content
     }
   };
   walk(data, "", "");
-  const summary: string[] = [];
+  // Summary ordered by information value: plain scalars, then nested summaries; URL-valued
+  // fields (API link templates like GitHub's *_url) are collapsed into a count, since they would
+  // otherwise use up the default budget before the facts.
   const entries = data !== null && typeof data === "object" ? Object.entries(data as Record<string, unknown>) : [["value", data] as const];
+  const isUrl = (v: unknown) => typeof v === "string" && /^https?:\/\//.test(v);
+  const scalars: string[] = [];
+  const nested: string[] = [];
+  const urls: string[] = [];
   for (const [k, v] of entries) {
-    if (v !== null && typeof v === "object") summary.push(`${k}: ${Array.isArray(v) ? `[${v.length} items]` : `{${Object.keys(v).length} keys}`}`);
-    else summary.push(`${k}: ${clip(String(v), 200)}`);
+    if (v !== null && typeof v === "object") nested.push(`${k}: ${Array.isArray(v) ? `[${v.length} items]` : `{${Object.keys(v).length} keys}`}`);
+    else if (isUrl(v)) urls.push(String(k));
+    else scalars.push(`${k}: ${clip(String(v), 200)}`);
   }
+  const summary = [...scalars, ...nested];
+  if (urls.length) summary.push(`(${urls.length} URL fields omitted: ${clip(urls.join(", "), 160)}; use --find or --full)`);
   const obj = data as Record<string, unknown> | null;
   const title = String((obj && typeof obj === "object" && (obj.full_name ?? obj.name ?? obj.title)) || url);
   const sections: Section[] = entries.filter(([, v]) => v !== null && typeof v === "object").slice(0, 25).map(([k]) => ({ heading: String(k), level: 2 }));
