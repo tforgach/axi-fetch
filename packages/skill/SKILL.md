@@ -15,7 +15,8 @@ when you need the *content* of a page, not a full DOM.
 
 ## Usage
 
-`axi-fetch` is already installed and on your PATH. Run it directly in Bash (not via `npx` or a path):
+`axi-fetch` is already installed and on your PATH. Run it directly in Bash (not via `npx` or a path).
+It handles any URL: web pages, JSON APIs, and plain-text/Markdown files.
 
 ```sh
 axi-fetch <url>                                   # title, opening content (3000 chars), sections

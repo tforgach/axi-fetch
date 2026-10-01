@@ -4,7 +4,7 @@ import { axiFetch } from "./index.js";
 import { toStructured, type AxiStructuredOutput } from "./output.js";
 import type { AxiFetchOptions } from "./types.js";
 
-const VERSION = "0.3.0-dev";
+const VERSION = "0.3.0";
 const DESCRIPTION =
   "Fetch a URL and get a token-efficient, agent-ready TOON response";
 

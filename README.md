@@ -97,7 +97,7 @@ URL → fetch (native; HTTP + meta-refresh redirects, charset, disk cache)
 | Article extraction | `@mozilla/readability` on `jsdom` |
 | TOON | official `@toon-format/toon` (via `axi-sdk-js`) |
 | Type detection | rules-based (URL, meta, schema.org — no LLM) |
-| Page types | `article`, `documentation`, `generic` fallback |
+| Page types | `article`, `documentation`, `generic` fallback; `json` (APIs) and `text` (plain/Markdown/RFCs) |
 | Errors | structured TOON + exit codes, never interactive |
 
 ## Benchmark
@@ -122,17 +122,19 @@ metadata overhead can make output net-larger — a documented tradeoff.
 
 Output size is only half the story: what matters is what an agent spends to get the right
 answer. [axi-arena](https://github.com/tforgach/axi-arena) runs the same tasks with axi-fetch
-and with Claude Code's built-in `WebFetch` (or raw `curl`) and scores correctness, tokens,
-turns and time. With v0.2.0 (`--find`, paging, leaner defaults) and usage delivered as ambient
-context, on Claude Haiku 4.5, 6 tasks × 3 trials per arm:
+and with Claude Code's built-in `WebFetch` (or raw `curl`) and scores correctness, tool tokens,
+turns and time. v0.3.0 was hill-climbed against it: changes were kept only when the train-task
+score improved without losing correctness, and checked on held-out tasks never used for choosing.
+Claude Haiku 4.5, 3 trials per arm, ambient (hook) context charged to axi-fetch:
 
-| Baseline | Arena Score (0 = parity) | Notes |
-|---|--:|---|
-| WebFetch | **+11.9** [+9.8, +13.5] | 43–61% fewer tokens on content-heavy pages, same 2 turns |
-| curl | **+18.0** [+13.6, +20.3] | up to 61% fewer tokens and 75% fewer turns |
+| Tasks | v0.2.0 | **v0.3.0** | v0.3.0 vs WebFetch | v0.3.0 vs curl | Correct |
+|---|--:|--:|--:|--:|--:|
+| Train (8: docs, articles, canaries, 404, JSON API, RFC text) | +11.6 | **+33.8** | +26.2 | +41.4 | 100% |
+| Held-out (6: MDN, Wikipedia tables, Python docs, GitHub API, RFC 9110, Effective Go) | −13.9 | **+38.7** | +44.2 | +33.2 | 100% |
 
-v0.1.x scored −43.6 against WebFetch in the same arena: the extra skill-loading turn and the
-`--full` round-trips cost more than the smaller output saved.
+Content-heavy pages need 81–97% fewer tool tokens than WebFetch. v0.2.0 failed every JSON API
+and most plain-text tasks (it rejected non-HTML). v0.1.x scored −49 against WebFetch, because the
+skill-loading turn and the `--full` round-trips cost more than the smaller output saved.
 
 ## Development
 
@@ -151,5 +153,5 @@ Publishing a new version is tag-driven — see [`RELEASING.md`](RELEASING.md).
 ## Status
 
 Published: [`@tforgach/axi-fetch`](https://www.npmjs.com/package/@tforgach/axi-fetch)
-(v0.2.0, MIT). Core is working end-to-end (fetch → detect → extract → TOON) with a
+(v0.3.0, MIT). Core is working end-to-end (fetch → detect → extract → TOON) with a
 benchmark harness and CI.

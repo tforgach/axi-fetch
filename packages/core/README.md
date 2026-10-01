@@ -39,6 +39,9 @@ axi-fetch <url> [flags]
 --timeout <ms>    Network timeout (default 10000)
 ```
 
+Works on HTML pages, JSON APIs (`--find` searches field paths like `owner.login`) and plain-text
+or Markdown files (RFC-style and `#` headings work with `--section`).
+
 Looking for a specific fact? Pass `--find` on the first call and get only the matching
 passages, each with its section:
 
